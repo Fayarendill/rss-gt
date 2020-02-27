@@ -6,20 +6,23 @@ import akka.util.Timeout
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-
+import scala.util.{Failure, Success}
+import com.typesafe.scalalogging._
+import org.slf4j.LoggerFactory
 
 object RssReader {
+  private val logger = Logger(LoggerFactory.getLogger(this.getClass))
+
   def main(args : Array[String]):Unit = {
     val system: ActorSystem = ActorSystem("Fetcher")
     implicit val timeout: Timeout = Timeout(30.seconds)
     val SubReader = system.actorOf(Props[SubscriptionReader])
-
-    for {
-      urls <- (SubReader ? "rss.json").mapTo[Seq[String]]
-      url <- urls
-    } system.actorOf(Props[Fetcher]) ! url
-    Thread.sleep(5000)
-    system.actorOf(Props[Aggregator]) ! timeout
-    //system.shutdown()
+    (SubReader ? "rss.json").onComplete {
+      case Success(urls) => (system.actorOf(Props[Fetcher]) ? urls).onComplete {
+        case Success(headlines) => system.actorOf(Props[Dumper]) ! headlines
+        case Failure(exception) => logger.error(s"failed to get headlines ex = $exception")
+      }
+      case Failure(exception) => logger.error(s"failed to get urls ex = $exception")
+    }
   }
 }

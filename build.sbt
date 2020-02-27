@@ -12,6 +12,8 @@ libraryDependencies ++= Seq(
   "com.outr" %% "scribe" % "2.7.10",
   "com.lihaoyi" %% "scalatags" % "0.8.2",
   "com.rometools" % "rome" % "1.8.0",
+  "ch.qos.logback" % "logback-classic" % "1.1.3",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
 //  "io.monix" %% "monix" % "3.1.0",
   "joda-time" % "joda-time" % "2.9.9",
   "org.json4s" %% "json4s-native" % "3.7.0-M2",
