@@ -17,12 +17,24 @@ object RssReader {
     val system: ActorSystem = ActorSystem("Fetcher")
     implicit val timeout: Timeout = Timeout(30.seconds)
     val SubReader = system.actorOf(Props[SubscriptionReader])
-    (SubReader ? "rss.json").onComplete {
+/*    (SubReader ? "rss.json").onComplete {
       case Success(urls) => (system.actorOf(Props[Fetcher]) ? urls).onComplete {
         case Success(headlines) => system.actorOf(Props[Dumper]) ! headlines
         case Failure(exception) => logger.error(s"failed to get headlines ex = $exception")
       }
       case Failure(exception) => logger.error(s"failed to get urls ex = $exception")
+    }*/
+
+    (SubReader ? "rss.json").onComplete {
+      case Success(urls) => (system.actorOf(Props[Fetcher]) ? urls).onComplete {
+        case Success(_) => (system.actorOf(Props[Fetcher]) ? ()).onComplete {
+          case Success(headlines) => system.actorOf(Props[Dumper]) ! headlines
+          case Failure(exception) => logger.error(s"failed to get headlines cache ex = $exception")
+        }
+        case Failure(exception) => logger.error(s"failed to get headlines ex = $exception")
+      }
+      case Failure(exception) => logger.error(s"failed to get urls ex = $exception")
     }
   }
+
 }
