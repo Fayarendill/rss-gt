@@ -9,23 +9,8 @@ import scalaj.http.{Http, HttpResponse}
 
 import scala.jdk.CollectionConverters._
 
-class GoogleTrends extends Actor with ActorLogging{
-//  val trendsUrl = "https://trends.google.com/trends/fetchComponent?"
+class GoogleTrends extends Actor with ActorLogging {
   val trendsUrl = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=US"
-
-//  def getTrend(keywords: List[String]): String = {
-//    val keywordsPart = "q".foldLeft("=") {(keywords, key) =>
-//      keywords + "," + key
-//    }
-//    val request: String = trendsUrl + keywordsPart + "&export=3"
-//
-//    val post: HttpPost = new HttpPost(request)
-//
-//    val client = new DefaultHttpClient
-////    Http(request).timeout(5000, 10000).asString.toString
-//    val response = client.execute(post)
-//    response.toString
-//  }
 
   def receive(): Receive = {
     case () => sender ! trends(trendsUrl)
@@ -54,7 +39,5 @@ class GoogleTrends extends Actor with ActorLogging{
   }
 
 }
-
-case class Trend (keywords: String, measure: Int)
 
 

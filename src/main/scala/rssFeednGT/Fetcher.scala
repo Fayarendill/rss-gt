@@ -25,7 +25,6 @@ class Fetcher extends Actor with ActorLogging {
         val feed = new SyndFeedInput().build(new XmlReader(input))
 
         log.info(s"downloaded feed, url = $url")
-//        Source.fromIterator (() => extractHeadlines(feed))
         extractHeadlines(feed)
     }
   }
@@ -49,11 +48,6 @@ class Fetcher extends Actor with ActorLogging {
     }
   }
 
-//  def extractHeadlines(feed: SyndFeed): List[Headline] = {
-//    feed.getEntries.asScala.toList flatMap { entry =>
-//      Seq(new Headline(feed, entry))
-//    }
-//  }
 }
 
 object Fetcher {

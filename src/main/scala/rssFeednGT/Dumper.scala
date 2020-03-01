@@ -38,14 +38,6 @@ class Dumper extends Actor with ActorLogging {
     }
   }
 
-//  def trendingMeasure(headline: Headline, trends: List[String]): Int = {
-//    val text = headline.description + headline.title
-//    trends map {trend => countOccurrences(text,trend)} sum
-//  }
-//
-//  def countOccurrences(src: String, tgt: String): Int =
-//    src.toSeq.sliding(tgt.length).map(_.unwrap).count(window => window == tgt)
-
   def receive(): Receive = {
     case (headlines:Seq[Headline]) => consoleDump(headlines)
     case _ => log.error("unknown message received")
