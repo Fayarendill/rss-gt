@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream
 
 import akka.actor.{Actor, ActorLogging}
 import com.rometools.rome.feed.synd.SyndFeed
-import com.rometools.rome.io.{SyndFeedInput, XmlReader => RXmlReader}
+import com.rometools.rome.io.{SyndFeedInput, XmlReader}
 import scalaj.http.Http
 
 import scala.collection.mutable
@@ -22,9 +22,9 @@ class Fetcher extends Actor with ActorLogging {
         throw new Exception(r.statusLine)
       case r =>
         val input = new ByteArrayInputStream(r.body)
-        val feed = new SyndFeedInput().build(new RXmlReader(input))
+        val feed = new SyndFeedInput().build(new XmlReader(input))
 
-        log.info(url)
+        log.info(s"downloaded feed, url = $url")
 //        Source.fromIterator (() => extractHeadlines(feed))
         extractHeadlines(feed)
     }

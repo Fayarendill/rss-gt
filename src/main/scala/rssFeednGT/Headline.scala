@@ -5,6 +5,7 @@ import java.util.Date
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import scala.jdk.CollectionConverters._
+import scala.language.postfixOps
 
 class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Headline] {
   /** Clean and parse the title as HTML.
@@ -25,6 +26,14 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
   val date: Date = Option(entry.getUpdatedDate)
     .orElse(Option(entry.getPublishedDate))
     .getOrElse(new Date)
+
+  def trendingMeasure(trends: List[String]): Int = {
+    val text = this.description + this.title
+    trends map {trend => countOccurrences(text,trend)} sum
+  }
+
+  def countOccurrences(src: String, tgt: String): Int =
+    src.toSeq.sliding(tgt.length).map(_.unwrap).count(window => window == tgt)
 
   /** True if a Headline belongs to a given feed. This exists since Headlines
    * are cached and the feed object can change.

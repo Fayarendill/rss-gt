@@ -25,6 +25,22 @@ object RssReader {
       case Failure(exception) => logger.error(s"failed to get urls ex = $exception")
     }*/
 
+//    (SubReader ? "rss.json").onComplete {
+//      case Success(urls) => (system.actorOf(Props[Fetcher]) ? urls).onComplete {
+//        case Success(_) => (system.actorOf(Props[Fetcher]) ? ()).onComplete {
+//          case Success(headlines) => system.actorOf(Props[Dumper]) ! headlines
+//          case Failure(exception) => logger.error(s"failed to get headlines cache ex = $exception")
+//        }
+//        case Failure(exception) => logger.error(s"failed to get headlines ex = $exception")
+//      }
+//      case Failure(exception) => logger.error(s"failed to get urls ex = $exception")
+//    }
+
+//    (system.actorOf(Props[GoogleTrends]) ? ()).onComplete {
+//      case Success(trends) => println(trends)
+//      case Failure(exception) => logger.error(s"failed to get trends ex = $exception")
+//    }
+
     (SubReader ? "rss.json").onComplete {
       case Success(urls) => (system.actorOf(Props[Fetcher]) ? urls).onComplete {
         case Success(_) => (system.actorOf(Props[Fetcher]) ? ()).onComplete {
@@ -35,6 +51,7 @@ object RssReader {
       }
       case Failure(exception) => logger.error(s"failed to get urls ex = $exception")
     }
+
   }
 
 }

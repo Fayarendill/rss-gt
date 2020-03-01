@@ -21,5 +21,6 @@ libraryDependencies ++= Seq(
   "org.scalaj" %% "scalaj-http" % "2.4.2",
   "com.typesafe.akka" %% "akka-actor" % "2.6.3",
   "org.scala-lang.modules" %% "scala-xml" % "1.2.0",
-  "com.typesafe.akka" %% "akka-stream" % "2.6.3"
+  "com.typesafe.akka" %% "akka-stream" % "2.6.3",
+  "org.apache.httpcomponents" % "httpclient" % "4.5.11"
 )
