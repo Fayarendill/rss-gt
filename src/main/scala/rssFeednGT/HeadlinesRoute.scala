@@ -3,37 +3,48 @@ package rssFeednGT
 import akka.NotUsed
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.common.{EntityStreamingSupport, JsonEntityStreamingSupport}
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling}
+import akka.http.scaladsl.model.ContentTypes
+import akka.stream.scaladsl.Flow
+import akka.util.ByteString
+
+import scala.concurrent.Await
 //import akka.http.scaladsl.common.EntityStreamingSupport
 //import akka.http.scaladsl.marshallers.sprayjson.JsonEntityStreamingSupport
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives.{complete, get, path}
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.stream.scaladsl.Source
-import akka.util.{ByteString, Timeout}
+import akka.util.Timeout
 
-import scala.collection.immutable
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
-import scala.concurrent.duration._
-import scala.util.{Failure, Success}
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import JsonFormats._
-
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
 //import scala.concurrent.ExecutionContext.Implicits.global
 
 object HeadlinesRoute {
-  implicit val timeout: Timeout = Timeout(30.seconds)
-  implicit val jsonStreamingSupport: JsonEntityStreamingSupport = EntityStreamingSupport.json().withParallelMarshalling(parallelism = 8, unordered = false)
+  implicit val timeout: Timeout = Timeout(5.seconds)
+  implicit val jsonStreamingSupport: JsonEntityStreamingSupport = EntityStreamingSupport.json()
+
+  implicit val stringFormat = Marshaller[String, ByteString] { ec ⇒ s ⇒
+    Future.successful {
+      List(Marshalling.WithFixedContentType(ContentTypes.`application/json`, () ⇒
+        ByteString("\"" + s + "\"")) // "raw string" to be rendered as json element in our stream must be enclosed by ""
+      )
+    }
+  }
 
   def getHeadlines(system: ActorSystem) = {
     implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-//    val fetcher = system.actorOf(Props[Fetcher])
-    val dumper  = system.actorOf(Props[Dumper])
-    for {
-      source <- (dumper ? ()).mapTo[Source[HeadlineC, NotUsed]]
-    } yield source
+    val toStringF: Flow[HeadlineC, String, NotUsed] = Flow[HeadlineC].mapAsync(2) { x =>
+      Future {
+        x.title + " " + x.description
+      }
+    }
 
+    val dumper = system.actorOf(Props[Dumper])
+    (dumper ? ()).mapTo[Future[Source[String, NotUsed]]].flatten
   }
 
   def headlinesRoute(system: ActorSystem): Route =
@@ -43,3 +54,4 @@ object HeadlinesRoute {
       }
     }
 }
+

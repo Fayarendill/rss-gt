@@ -34,9 +34,9 @@ class Dumper extends Actor with ActorLogging {
 
   val inTrends: Flow[(Headline, Int), (Headline, Int), NotUsed] = Flow[(Headline, Int)].filter(_._2 != 0)
 
-  val outFlow: Flow[(Headline, Int), HeadlineC, NotUsed] = Flow[(Headline, Int)].mapAsync(2) { x =>
+  val outFlow: Flow[(Headline, Int), String, NotUsed] = Flow[(Headline, Int)].mapAsync(2) { x =>
     Future {
-      x._1.toOut
+      x._1.title
     }
   }
 
@@ -49,7 +49,7 @@ class Dumper extends Actor with ActorLogging {
     }
   }
 
-  def outDump(): Future[Source[HeadlineC, NotUsed]] = {
+  def outDump(): Future[Source[String, NotUsed]] = {
     implicit val timeout: Timeout = Timeout(30.seconds)
     val fetcher      = context.actorOf(Props[Fetcher])
     val googleTrends = context.actorOf(Props[GoogleTrends])
@@ -57,10 +57,17 @@ class Dumper extends Actor with ActorLogging {
       headlines <- (fetcher ? ()).mapTo[Seq[Headline]]
       trends <- (googleTrends ? ()).mapTo[List[Trend]]
     } yield Source.fromIterator(() => headlines.iterator).via(trendingMeasured(trends)).via(inTrends).via(outFlow)
+//    Future{
+//      ((fetcher ? ()).mapTo[Seq[Headline]], (googleTrends ? ()).mapTo[List[Trend]])
+//    }.mapTo[(Seq[Headline], List[Trend])].map { x =>
+//      val headlines = x._1
+//      val trends = x._2
+//      Source.fromIterator(() => headlines.iterator).via(trendingMeasured(trends)).via(inTrends).via(outFlow)
+//    }
   }
 
   def receive(): Receive = {
-    case (headlines:Seq[Headline]) => consoleDump(headlines)
+    case headlines:Seq[Headline] => consoleDump(headlines)
     case () => sender ! outDump()
     case _ => log.error("unknown message received")
   }
