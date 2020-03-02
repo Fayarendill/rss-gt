@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream
 import akka.actor.{Actor, ActorLogging}
 import com.rometools.rome.feed.synd.SyndFeed
 import com.rometools.rome.io.{SyndFeedInput, XmlReader}
-import scalaj.http.{Http, HttpResponse}
+import scalaj.http.Http
 
 import scala.jdk.CollectionConverters._
 import scala.util.matching.Regex

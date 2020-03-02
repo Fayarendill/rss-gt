@@ -28,6 +28,8 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
     .orElse(Option(entry.getPublishedDate))
     .getOrElse(new Date)
 
+  def toOut: HeadlineC = HeadlineC(this.title, this.description)
+
   def trendingMeasure(trends: List[Trend]): Int = {
     val nonWord: Regex = "\\W".r
     val text           = nonWord.replaceAllIn((this.description + this.title).map (_.toLower), "")
@@ -76,3 +78,5 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
    */
   override def hashCode: Int = entry.getLink.hashCode
 }
+
+case class HeadlineC(title: String, description: String)

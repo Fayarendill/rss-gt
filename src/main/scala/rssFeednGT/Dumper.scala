@@ -5,12 +5,13 @@ import akka.actor.{Actor, ActorLogging, Props}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.pattern.ask
-import akka.util.Timeout
+import akka.util.{ByteString, Timeout}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
+import scala.concurrent.Await
 
 class Dumper extends Actor with ActorLogging {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -19,6 +20,10 @@ class Dumper extends Actor with ActorLogging {
     println(x._1)
     println(x._2)
   }
+
+//  val outSink: Sink[(Headline, Int), Future[Done]] = Sink.foreach[(Headline, Int)] {x =>
+//    x._1.toOut
+//  }
 
   def trendingMeasured(trends: List[Trend]): Flow[Headline, (Headline, Int), NotUsed] =
     Flow[Headline].mapAsync(2) { headline =>
@@ -29,6 +34,12 @@ class Dumper extends Actor with ActorLogging {
 
   val inTrends: Flow[(Headline, Int), (Headline, Int), NotUsed] = Flow[(Headline, Int)].filter(_._2 != 0)
 
+  val outFlow: Flow[(Headline, Int), HeadlineC, NotUsed] = Flow[(Headline, Int)].mapAsync(2) { x =>
+    Future {
+      x._1.toOut
+    }
+  }
+
   def consoleDump(headlines:Seq[Headline]): Unit = {
     implicit val timeout: Timeout = Timeout(30.seconds)
     val source = Source.fromIterator(() => headlines.iterator)
@@ -38,8 +49,19 @@ class Dumper extends Actor with ActorLogging {
     }
   }
 
+  def outDump(): Future[Source[HeadlineC, NotUsed]] = {
+    implicit val timeout: Timeout = Timeout(30.seconds)
+    val fetcher      = context.actorOf(Props[Fetcher])
+    val googleTrends = context.actorOf(Props[GoogleTrends])
+    for {
+      headlines <- (fetcher ? ()).mapTo[Seq[Headline]]
+      trends <- (googleTrends ? ()).mapTo[List[Trend]]
+    } yield Source.fromIterator(() => headlines.iterator).via(trendingMeasured(trends)).via(inTrends).via(outFlow)
+  }
+
   def receive(): Receive = {
     case (headlines:Seq[Headline]) => consoleDump(headlines)
+    case () => sender ! outDump()
     case _ => log.error("unknown message received")
   }
 }

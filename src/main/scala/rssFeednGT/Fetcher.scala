@@ -11,8 +11,6 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-case class GetHeadlines()
-
 class Fetcher extends Actor with ActorLogging {
   def download(url: String, redirects: Int = 5): List[Headline] = {
     Http(url).timeout(5000, 10000).asBytes match {
