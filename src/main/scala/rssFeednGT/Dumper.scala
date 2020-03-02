@@ -20,7 +20,7 @@ class Dumper extends Actor with ActorLogging {
     println(x._2)
   }
 
-  def trendingMeasured(trends: List[String]): Flow[Headline, (Headline, Int), NotUsed] =
+  def trendingMeasured(trends: List[Trend]): Flow[Headline, (Headline, Int), NotUsed] =
     Flow[Headline].mapAsync(2) { headline =>
       Future {
         (headline, headline.trendingMeasure(trends))
@@ -32,7 +32,7 @@ class Dumper extends Actor with ActorLogging {
   def consoleDump(headlines:Seq[Headline]): Unit = {
     implicit val timeout: Timeout = Timeout(30.seconds)
     val source = Source.fromIterator(() => headlines.iterator)
-    (context.actorOf(Props[GoogleTrends]) ? ()).mapTo[List[String]].onComplete {
+    (context.actorOf(Props[GoogleTrends]) ? ()).mapTo[List[Trend]].onComplete {
       case Success(trends) => source.via(trendingMeasured(trends)).via(inTrends).runWith(consoleSink)
       case Failure(exception) => log.error(s"failed to get trends ex = $exception")
     }

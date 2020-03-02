@@ -6,6 +6,7 @@ import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import scala.jdk.CollectionConverters._
 import scala.language.postfixOps
+import scala.util.matching.Regex
 
 class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Headline] {
   /** Clean and parse the title as HTML.
@@ -27,9 +28,10 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
     .orElse(Option(entry.getPublishedDate))
     .getOrElse(new Date)
 
-  def trendingMeasure(trends: List[String]): Int = {
-    val text = this.description + this.title
-    trends map {trend => countOccurrences(text,trend)} sum
+  def trendingMeasure(trends: List[Trend]): Int = {
+    val nonWord: Regex = "\\W".r
+    val text           = nonWord.replaceAllIn((this.description + this.title).map (_.toLower), "")
+    trends map {trend => countOccurrences(text,trend.text)} sum
   }
 
   def countOccurrences(src: String, tgt: String): Int =

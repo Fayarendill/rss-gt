@@ -8,6 +8,7 @@ import com.rometools.rome.io.{SyndFeedInput, XmlReader}
 import scalaj.http.{Http, HttpResponse}
 
 import scala.jdk.CollectionConverters._
+import scala.util.matching.Regex
 
 class GoogleTrends extends Actor with ActorLogging {
   val trendsUrl = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=US"
@@ -16,7 +17,7 @@ class GoogleTrends extends Actor with ActorLogging {
     case () => sender ! trends(trendsUrl)
   }
 
-  def trends(url: String, redirects: Int = 5): List[String] = {
+  def trends(url: String, redirects: Int = 5): List[Trend] = {
   Http(url).timeout(5000, 10000).asBytes match {
     case r if r.isRedirect && redirects > 0 =>
       trends(r.location.get, redirects-1)
@@ -30,14 +31,16 @@ class GoogleTrends extends Actor with ActorLogging {
     }
   }
 
-  def extractTrends(feed: SyndFeed): List[String] = {
+  def extractTrends(feed: SyndFeed): List[Trend] = {
     feed.getEntries.asScala.toList flatMap { entry =>
       Seq(entry.getTitle, entry.getDescription.getValue)
     } filterNot (_.isEmpty) flatMap { trend =>
       trend.split(", ").toList
-    }
+    } map {trend => new Trend(trend)}
   }
-
 }
 
-
+class Trend(str: String) {
+  private val nonWord: Regex = "\\W".r
+  val text: String =  nonWord.replaceAllIn(str.map (_.toLower), "")
+}
