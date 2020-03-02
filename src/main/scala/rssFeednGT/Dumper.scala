@@ -1,17 +1,16 @@
 package rssFeednGT
 
-import akka.{Done, NotUsed}
 import akka.actor.{Actor, ActorLogging, Props}
+import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.pattern.ask
-import akka.util.{ByteString, Timeout}
+import akka.util.Timeout
+import akka.{Done, NotUsed}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
-import scala.concurrent.Await
 
 class Dumper extends Actor with ActorLogging {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -20,10 +19,6 @@ class Dumper extends Actor with ActorLogging {
     println(x._1)
     println(x._2)
   }
-
-//  val outSink: Sink[(Headline, Int), Future[Done]] = Sink.foreach[(Headline, Int)] {x =>
-//    x._1.toOut
-//  }
 
   def trendingMeasured(trends: List[Trend]): Flow[Headline, (Headline, Int), NotUsed] =
     Flow[Headline].mapAsync(2) { headline =>
@@ -57,13 +52,6 @@ class Dumper extends Actor with ActorLogging {
       headlines <- (fetcher ? ()).mapTo[Seq[Headline]]
       trends <- (googleTrends ? ()).mapTo[List[Trend]]
     } yield Source.fromIterator(() => headlines.iterator).via(trendingMeasured(trends)).via(inTrends).via(outFlow)
-//    Future{
-//      ((fetcher ? ()).mapTo[Seq[Headline]], (googleTrends ? ()).mapTo[List[Trend]])
-//    }.mapTo[(Seq[Headline], List[Trend])].map { x =>
-//      val headlines = x._1
-//      val trends = x._2
-//      Source.fromIterator(() => headlines.iterator).via(trendingMeasured(trends)).via(inTrends).via(outFlow)
-//    }
   }
 
   def receive(): Receive = {

@@ -5,23 +5,15 @@ import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.common.{EntityStreamingSupport, JsonEntityStreamingSupport}
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling}
 import akka.http.scaladsl.model.ContentTypes
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
-
-import scala.concurrent.Await
-//import akka.http.scaladsl.common.EntityStreamingSupport
-//import akka.http.scaladsl.marshallers.sprayjson.JsonEntityStreamingSupport
 import akka.http.scaladsl.server.Directives.{complete, get, path}
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
-import akka.stream.scaladsl.Source
-import akka.util.Timeout
+import akka.stream.scaladsl.{Flow, Source}
+import akka.util.{ByteString, Timeout}
 
-import JsonFormats._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-
-//import scala.concurrent.ExecutionContext.Implicits.global
+import JsonFormats._
 
 object HeadlinesRoute {
   implicit val timeout: Timeout = Timeout(5.seconds)
