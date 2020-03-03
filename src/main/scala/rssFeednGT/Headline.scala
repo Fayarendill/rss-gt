@@ -32,7 +32,7 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
 
   def trendingMeasure(trends: List[Trend]): Int = {
     val nonWord: Regex = "\\W".r
-    val text           = nonWord.replaceAllIn((this.description + this.title).map (_.toLower), "")
+    val text           = nonWord.replaceAllIn((this.body + this.title).map (_.toLower), "")
     trends map {trend => countOccurrences(text,trend.text)} sum
   }
 
