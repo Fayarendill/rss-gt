@@ -19,9 +19,9 @@ object HeadlinesRoute {
   implicit val timeout: Timeout = Timeout(5.seconds)
   implicit val jsonStreamingSupport: JsonEntityStreamingSupport = EntityStreamingSupport.json()
 
-  implicit val stringFormat = Marshaller[String, ByteString] { ec ⇒ s ⇒
+  implicit val stringFormat: Marshaller[String, ByteString] = Marshaller[String, ByteString] { ec => s =>
     Future.successful {
-      List(Marshalling.WithFixedContentType(ContentTypes.`application/json`, () ⇒
+      List(Marshalling.WithFixedContentType(ContentTypes.`application/json`, () =>
         ByteString("\"" + s + "\"")) // "raw string" to be rendered as json element in our stream must be enclosed by ""
       )
     }
@@ -31,12 +31,12 @@ object HeadlinesRoute {
     implicit val executionContext: ExecutionContextExecutor = system.dispatcher
     val toStringF: Flow[HeadlineC, String, NotUsed] = Flow[HeadlineC].mapAsync(2) { x =>
       Future {
-        x.title + " " + x.description
+        x.title + " " + x.body
       }
     }
 
     val dumper = system.actorOf(Props[Dumper])
-    (dumper ? ()).mapTo[Future[Source[String, NotUsed]]].flatten
+    (dumper ? ()).mapTo[Future[Source[HeadlineC, NotUsed]]].flatten.map(_.via(toStringF))
   }
 
   def headlinesRoute(system: ActorSystem): Route =

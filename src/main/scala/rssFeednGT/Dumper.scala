@@ -29,9 +29,9 @@ class Dumper extends Actor with ActorLogging {
 
   val inTrends: Flow[(Headline, Int), (Headline, Int), NotUsed] = Flow[(Headline, Int)].filter(_._2 != 0)
 
-  val outFlow: Flow[(Headline, Int), String, NotUsed] = Flow[(Headline, Int)].mapAsync(2) { x =>
+  val outFlow: Flow[(Headline, Int), HeadlineC, NotUsed] = Flow[(Headline, Int)].mapAsync(2) { x =>
     Future {
-      x._1.title
+      x._1.toOut
     }
   }
 
@@ -44,7 +44,7 @@ class Dumper extends Actor with ActorLogging {
     }
   }
 
-  def outDump(): Future[Source[String, NotUsed]] = {
+  def outDump(): Future[Source[HeadlineC, NotUsed]] = {
     implicit val timeout: Timeout = Timeout(30.seconds)
     val fetcher      = context.actorOf(Props[Fetcher])
     val googleTrends = context.actorOf(Props[GoogleTrends])

@@ -13,7 +13,7 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
    */
   val title: String = Jsoup.parse(Jsoup.clean(entry.getTitle.replace('\n', ' '), Whitelist.none)).text
 
-  /** Get the optional description of the Headline. Then parse parse and clean
+  /** Get the optional body of the Headline. Then parse parse and clean
    * the HTML inside it as a summary.
    */
   val contents: Option[SyndContent] = entry.getContents.asScala.headOption
@@ -28,7 +28,7 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
     .orElse(Option(entry.getPublishedDate))
     .getOrElse(new Date)
 
-  def toOut: HeadlineC = HeadlineC(this.title, this.description)
+  def toOut: HeadlineC = HeadlineC(this.title, this.body)
 
   def trendingMeasure(trends: List[Trend]): Int = {
     val nonWord: Regex = "\\W".r
@@ -79,4 +79,4 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
   override def hashCode: Int = entry.getLink.hashCode
 }
 
-case class HeadlineC(title: String, description: String)
+case class HeadlineC(title: String, body: String)

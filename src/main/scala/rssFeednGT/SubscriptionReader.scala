@@ -27,8 +27,7 @@ class SubscriptionReader extends Actor with ActorLogging{
   }
   def read(jval:JValue): Seq[String] = {
     implicit val formats: DefaultFormats.type = DefaultFormats // Brings in default date formats etc.
-    val urls = jval.extract[Subscriptions].urls
-    urls
+    jval.extract[Subscriptions].urls
   }
 
   def receive(): Receive = {
