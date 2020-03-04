@@ -31,7 +31,7 @@ object HeadlinesRoute {
     implicit val executionContext: ExecutionContextExecutor = system.dispatcher
     val toStringF: Flow[HeadlineC, String, NotUsed] = Flow[HeadlineC].mapAsync(2) { x =>
       Future {
-        x.title + " " + x.body
+        x.title
       }
     }
 
