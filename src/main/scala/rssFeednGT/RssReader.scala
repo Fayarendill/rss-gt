@@ -21,8 +21,8 @@ object RssReader extends App {
   val fetcher        = system.actorOf(Props[Fetcher])
   val port           = 8080
 
-  (SubReader ? "rss.json").onComplete {
-    case Success(urls) => fetcher ! urls
+  (SubReader ? SubscriptionReaderLoad("rss.json")).mapTo[Seq[String]].onComplete {
+    case Success(urls) => urls.map { url => fetcher ! FetcherAddUrl(url)}
     case Failure(exception) => logger.error(s"failed to get urls ex = $exception")
   }
 

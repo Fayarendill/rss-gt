@@ -49,14 +49,17 @@ class Dumper extends Actor with ActorLogging {
     val fetcher      = context.actorOf(Props[Fetcher])
     val googleTrends = context.actorOf(Props[GoogleTrends])
     for {
-      headlines <- (fetcher ? ()).mapTo[Seq[Headline]]
+      headlines <- (fetcher ? FetcherGetHeadlines()).mapTo[Seq[Headline]]
       trends <- (googleTrends ? ()).mapTo[List[Trend]]
     } yield Source.fromIterator(() => headlines.iterator).via(trendingMeasured(trends)).via(inTrends).via(outFlow)
   }
 
   def receive(): Receive = {
-    case headlines:Seq[Headline] => consoleDump(headlines)
-    case () => sender ! outDump()
+    case DumperToConsole(headlines) => consoleDump(headlines)
+    case msg:DumperToOut => sender ! outDump()
     case _ => log.error("unknown message received")
   }
 }
+
+case class DumperToConsole(headlines: Seq[Headline])
+case class DumperToOut()

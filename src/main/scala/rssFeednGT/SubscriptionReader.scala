@@ -31,6 +31,8 @@ class SubscriptionReader extends Actor with ActorLogging{
   }
 
   def receive(): Receive = {
-    case filename:String => sender ! read(load(filename))
+    case SubscriptionReaderLoad(filename) => sender ! read(load(filename))
   }
 }
+
+case class SubscriptionReaderLoad(filename: String)

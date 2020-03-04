@@ -36,7 +36,7 @@ object HeadlinesRoute {
     }
 
     val dumper = system.actorOf(Props[Dumper])
-    (dumper ? ()).mapTo[Future[Source[HeadlineC, NotUsed]]].flatten.map(_.via(toStringF))
+    (dumper ? DumperToOut()).mapTo[Future[Source[HeadlineC, NotUsed]]].flatten.map(_.via(toStringF))
   }
 
   def headlinesRoute(system: ActorSystem): Route =

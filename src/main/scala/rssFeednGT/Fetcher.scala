@@ -13,11 +13,8 @@ import scala.util.Try
 
 class Fetcher extends Actor with ActorLogging {
   def receive(): Receive = {
-    //    case url:String => sender ! download(url)
-    //    case urls:Seq[String] => sender ! urls.flatMap {url => download(url)}
-    case url:String => Fetcher.addUrl(url)
-    case urls:Seq[String] => urls.map {url => Fetcher.addUrl(url)}
-    case () => sender ! Fetcher.getHeadlines.valuesIterator.toList
+    case FetcherAddUrl(url) => Fetcher.addUrl(url)
+    case msg:FetcherGetHeadlines => sender ! Fetcher.getHeadlines.valuesIterator.toList
     case msg:FetcherReload => reload()
     case _ => log.error("unknown message received")
   }
@@ -38,8 +35,8 @@ class Fetcher extends Actor with ActorLogging {
   }
 
   def reload(): mutable.Set[List[Headline]] = {
-    val urls = Fetcher.getUrls
-    urls.map(download(_))
+    Fetcher.cleanCache()
+    Fetcher.getUrls.map(download(_))
   }
 
   def extractHeadlines(feed: SyndFeed): List[Headline] = {
@@ -55,9 +52,11 @@ object Fetcher {
   private val rssUrls: mutable.Set[String] = mutable.Set[String]()
   def getHeadlines: mutable.Map[String, Headline] = headlinesCache
   def updateHeadlines(url:String, headline: Headline): Headline = headlinesCache getOrElseUpdate(url, headline)
+  def cleanCache(): Unit = headlinesCache.clear()
   def getUrls: mutable.Set[String] = rssUrls
   def addUrl(url: String) = rssUrls += url
 }
 
+case class FetcherGetHeadlines()
+case class FetcherAddUrl(url: String)
 case class FetcherReload()
-//case class Fet
