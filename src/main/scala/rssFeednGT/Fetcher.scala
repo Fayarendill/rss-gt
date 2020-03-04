@@ -12,6 +12,16 @@ import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 class Fetcher extends Actor with ActorLogging {
+  def receive(): Receive = {
+    //    case url:String => sender ! download(url)
+    //    case urls:Seq[String] => sender ! urls.flatMap {url => download(url)}
+    case url:String => Fetcher.addUrl(url)
+    case urls:Seq[String] => urls.map {url => Fetcher.addUrl(url)}
+    case () => sender ! Fetcher.getHeadlines.valuesIterator.toList
+    case msg:FetcherReload => reload()
+    case _ => log.error("unknown message received")
+  }
+
   def download(url: String, redirects: Int = 5): List[Headline] = {
     Http(url).timeout(5000, 10000).asBytes match {
       case r if r.isRedirect && redirects > 0 =>
@@ -27,17 +37,9 @@ class Fetcher extends Actor with ActorLogging {
     }
   }
 
-  def receive(): Receive = {
-    case url:String => sender ! download(url)
-    case urls:Seq[String] => sender ! urls.flatMap {url => download(url)}
-    case () => sender ! Fetcher.getHeadlines.valuesIterator.toList
-    case _ => log.error("unknown message received")
-  }
-
-  def headlines(feed: SyndFeed): Iterator[Headline] = {
-    feed.getEntries.asScala.iterator flatMap { entry =>
-      Seq(new Headline(feed, entry))
-    }
+  def reload(): mutable.Set[List[Headline]] = {
+    val urls = Fetcher.getUrls
+    urls.map(download(_))
   }
 
   def extractHeadlines(feed: SyndFeed): List[Headline] = {
@@ -50,6 +52,12 @@ class Fetcher extends Actor with ActorLogging {
 
 object Fetcher {
   private val headlinesCache: mutable.Map[String, Headline] = mutable.Map[String, Headline]()
+  private val rssUrls: mutable.Set[String] = mutable.Set[String]()
   def getHeadlines: mutable.Map[String, Headline] = headlinesCache
   def updateHeadlines(url:String, headline: Headline): Headline = headlinesCache getOrElseUpdate(url, headline)
+  def getUrls: mutable.Set[String] = rssUrls
+  def addUrl(url: String) = rssUrls += url
 }
+
+case class FetcherReload()
+//case class Fet
