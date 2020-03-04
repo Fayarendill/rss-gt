@@ -26,7 +26,7 @@ object RssReader extends App {
     case Failure(exception) => logger.error(s"failed to get urls ex = $exception")
   }
 
-  system.scheduler.scheduleWithFixedDelay(1.seconds, 5.seconds, fetcher, FetcherReload())
+  system.scheduler.scheduleWithFixedDelay(1.seconds, 10.seconds, fetcher, FetcherReload())
 
   val bindingFuture =
     Http().bindAndHandle(HeadlinesRoute.headlinesRoute(system), "localhost", port)
