@@ -16,6 +16,7 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
   /** Get the optional body of the Headline. Then parse parse and clean
    * the HTML inside it as a summary.
    */
+  val url: String = entry.getUri
   val contents: Option[SyndContent] = entry.getContents.asScala.headOption
   val description: String = contents orElse Option(entry.getDescription) map (_.getValue) getOrElse ""
   val summary: String = Jsoup.clean(description, Whitelist.relaxed)
@@ -28,16 +29,21 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
     .orElse(Option(entry.getPublishedDate))
     .getOrElse(new Date)
 
-  def toOut: HeadlineC = HeadlineC(this.title, this.body)
+  def toOut: HeadlineC = HeadlineC(this.title, this.body, this.url)
 
-  def trendingMeasure(trends: List[Trend]): Int = {
+  def trendingMeasure(trends: List[Trend]): (Int, String) = {
     val nonWord: Regex = "\\W".r
     val text           = nonWord.replaceAllIn((this.body + this.title).map (_.toLower), "")
-    trends map {trend => countOccurrences(text,trend.text)} sum
+    trends.map {trend => countOccurrences(text,trend.text)}.foldLeft(0 -> "") {(a, b) =>
+      if (!b._2.isEmpty) (a._1 + b._1)->(a._2 + ", " + b._2) else (a._1 + b._1)->a._2
+    }
   }
 
-  def countOccurrences(src: String, tgt: String): Int =
-    src.toSeq.sliding(tgt.length).map(_.unwrap).count(window => window == tgt)
+  def countOccurrences(src: String, tgt: String): (Int, String) = {
+    val count = src.toSeq.sliding(tgt.length).map(_.unwrap).count(window => window == tgt)
+    val matched = if (count > 0) tgt else ""
+    count -> matched
+  }
 
   /** True if a Headline belongs to a given feed. This exists since Headlines
    * are cached and the feed object can change.
@@ -79,4 +85,4 @@ class Headline(val feed: SyndFeed, val entry: SyndEntry) extends Comparable[Head
   override def hashCode: Int = entry.getLink.hashCode
 }
 
-case class HeadlineC(title: String, body: String)
+case class HeadlineC(title: String, body: String, url: String)

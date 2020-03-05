@@ -29,14 +29,14 @@ object HeadlinesRoute {
 
   def getHeadlines(system: ActorSystem) = {
     implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-    val toStringF: Flow[HeadlineC, String, NotUsed] = Flow[HeadlineC].mapAsync(2) { x =>
+    val toStringF: Flow[(HeadlineC, String), String, NotUsed] = Flow[(HeadlineC, String)].mapAsync(2) { x =>
       Future {
-        x.title
+        x._1.title + " " + x._1.url + " " + x._2
       }
     }
 
     val dumper = system.actorOf(Props[Dumper])
-    (dumper ? DumperToOut()).mapTo[Future[Source[HeadlineC, NotUsed]]].flatten.map(_.via(toStringF))
+    (dumper ? DumperToOut()).mapTo[Future[Source[(HeadlineC, String), NotUsed]]].flatten.map(_.via(toStringF))
   }
 
   def headlinesRoute(system: ActorSystem): Route =

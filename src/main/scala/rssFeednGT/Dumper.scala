@@ -15,23 +15,23 @@ import scala.util.{Failure, Success}
 class Dumper extends Actor with ActorLogging {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  val consoleSink: Sink[(Headline, Int), Future[Done]] = Sink.foreach[(Headline, Int)] {x =>
+  val consoleSink: Sink[(Headline, (Int, String)), Future[Done]] = Sink.foreach[(Headline, (Int, String))] {x =>
     println(x._1)
     println(x._2)
   }
 
-  def trendingMeasured(trends: List[Trend]): Flow[Headline, (Headline, Int), NotUsed] =
+  def trendingMeasured(trends: List[Trend]): Flow[Headline, (Headline, (Int, String)), NotUsed] =
     Flow[Headline].mapAsync(2) { headline =>
       Future {
-        (headline, headline.trendingMeasure(trends))
+        headline -> headline.trendingMeasure(trends)
       }
     }
 
-  val inTrends: Flow[(Headline, Int), (Headline, Int), NotUsed] = Flow[(Headline, Int)].filter(_._2 != 0)
+  val inTrends: Flow[(Headline, (Int, String)), (Headline, (Int, String)), NotUsed] = Flow[(Headline, (Int, String))].filter(_._2._1 != 0)
 
-  val outFlow: Flow[(Headline, Int), HeadlineC, NotUsed] = Flow[(Headline, Int)].mapAsync(2) { x =>
+  val outFlow: Flow[(Headline, (Int, String)), (HeadlineC, String), NotUsed] = Flow[(Headline, (Int, String))].mapAsync(2) { x =>
     Future {
-      x._1.toOut
+      x._1.toOut -> x._2._2
     }
   }
 
@@ -44,7 +44,7 @@ class Dumper extends Actor with ActorLogging {
     }
   }
 
-  def outDump(): Future[Source[HeadlineC, NotUsed]] = {
+  def outDump(): Future[Source[(HeadlineC, String), NotUsed]] = {
     implicit val timeout: Timeout = Timeout(30.seconds)
     val fetcher      = context.actorOf(Props[Fetcher])
     val googleTrends = context.actorOf(Props[GoogleTrends])
