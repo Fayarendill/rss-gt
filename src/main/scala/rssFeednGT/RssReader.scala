@@ -1,6 +1,6 @@
 package rssFeednGT
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.pattern.ask
 import akka.util.Timeout
